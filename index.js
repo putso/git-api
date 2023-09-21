@@ -1,7 +1,6 @@
 let input = document.getElementById("search");
 let results = document.getElementById("results");
 let repList = document.getElementById("rep-list");
-console.log(input, results);
 let dataResults = [];
 let repArr = new Map();
 let fetchRepo = async (name) => {
@@ -52,7 +51,6 @@ input.addEventListener(
     if (text.trim()) {
       let data = await fetchRepo(text);
       dataResults = data.items.slice(0, 5);
-      console.log(dataResults);
     } else {
       dataResults = [];
     }
