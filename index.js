@@ -1,78 +1,99 @@
-let input = document.getElementById("search");
-let results = document.getElementById("results");
-let repList = document.getElementById("rep-list");
+const input = document.getElementById("search");
+const results = document.getElementById("results");
+const repList = document.getElementById("rep-list");
 let dataResults = [];
-let repArr = new Map();
-let fetchRepo = async (name) => {
-  let response = await fetch(
-    `https://api.github.com/search/repositories?q=${name}`
-  );
-  let json = await response.json();
-  return json;
+const repArr = new Map();
+const fetchRepo = async (name) => {
+  const result = {
+    data: null,
+    error: null,
+  };
+  try {
+    const response = await fetch(
+      `https://api.github.com/search/repositories?q=${name}`
+    );
+    const json = await response.json();
+    result.data = json.items;
+  } catch (e) {
+    result.error = e;
+  }
+  return result;
 };
+function addRepo(id) {
+  if (id) repArr.set(dataResults[id].id, dataResults[id]);
+  renderRep();
+}
+function setResults(data) {
+  dataResults = data;
+  renderResults({ data: [], error: null });
+}
 results.addEventListener("click", (e) => {
-  let node = e.target;
+  const node = e.target;
   if (node.classList.contains("results__item")) {
-    let id = node.dataset.id;
+    const id = node.dataset.id;
     if (id) repArr.set(dataResults[id].id, dataResults[id]);
-    dataResults = [];
-    renderResults();
     input.value = "";
+    setResults([]);
     renderRep();
   }
 });
+function getRepHtml(data) {
+  return `<div class="rep-list__item rep-item"> <div class="rep-item__box-data" data-id=${data.id}>
+  <div class="rep-item__data" >Name:${data.name}</div>
+  <div class="rep-item__data">Owner:${data.owner.login}</div>
+  <div class="rep-item__data">Star: ${data.stargazers_count}</div>
+</div> <button class="rep-item__button" data-id=${data.id} style="font-size: 30px;">❌</button></div>`;
+}
 function renderRep() {
-  repList.innerHTML = '';
-  repList.insertAdjacentHTML('afterbegin',[...repArr.values()]
-    .map(
-      (
-        el,
-        i
-      ) => `<div class="rep-list__item rep-item"> <div class="rep-item__box-data" data-id=${el.d}>
-    <div class="rep-item__data" >Name:${el.name}</div>
-    <div class="rep-item__data">Owner:${el.owner.login}</div>
-    <div class="rep-item__data">Star: ${el.stargazers_count}</div>
-</div> <button class="rep-item__button" data-id=${el.id} style="font-size: 30px;">❌</button></div>`
-    )
-    .join(""))
+  setInner(
+    repList,
+    [...repArr.values()].map(getRepHtml).join("")
+  );
 }
 repList.addEventListener("click", (e) => {
-  let item = e.target;
+  const item = e.target;
   if (item.classList.contains("rep-item__button")) {
-    let id = item.dataset.id;
+    const id = item.dataset.id;
     repArr.delete(Number(id));
     renderRep();
   }
 });
+function validInput(text) {
+  return text.trim() != "";
+}
 input.addEventListener(
   "input",
   debounce(async (e) => {
-    let text = e.target.value;
-    if (text.trim()) {
-      let data = await fetchRepo(text);
-      dataResults = data.items.slice(0, 5);
-    } else {
+    const text = e.target.value;
+    if (!validInput(text)) {
       dataResults = [];
+      return;
     }
-    renderResults();
+    const response = await fetchRepo(text);
+    dataResults = response.data;
+    renderResults(response);
   }, 100)
 );
-function renderResults() {
+function setInner(node, html) {
+  node.innerHTML = "";
+  node.insertAdjacentHTML("afterbegin", html);
+}
+function renderResults({ data, error }) {
   let html = "";
-  dataResults.forEach((item, i) => {
-    html += `<div class="results__item" data-id=${i}>${item.full_name}</div>`;
-  });
-  results.innerHTML = '';
-  results.insertAdjacentHTML('afterbegin',html);
+  if (!error) {
+    data.slice(0, 5).forEach((item, i) => {
+      html += `<div class="results__item" data-id=${i}>${item.full_name}</div>`;
+    });
+  } else {
+    html = "Oй, что-то пошло не так. Перезагрузите страницу";
+  }
+  setInner(results, html);
 }
 function debounce(fn, ms) {
   let timeOut;
-  return function (...args) {
-    clearTimeout(timeOut);
-    return new Promise((res) => {
-      timeOut = setTimeout(() => {
-        res(fn.call(this, ...args));
-      }, ms);
-    });
-  };
+  return function(...args) {
+    clearTimeout(timeOut)
+    timeOut = setTimeout(fn.bind(this,...args),ms)
+    
+}
 }
