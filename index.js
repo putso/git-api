@@ -23,7 +23,8 @@ results.addEventListener("click", (e) => {
   }
 });
 function renderRep() {
-  repList.innerHTML = [...repArr.values()]
+  repList.innerHTML = '';
+  repList.insertAdjacentHTML('afterbegin',[...repArr.values()]
     .map(
       (
         el,
@@ -34,7 +35,7 @@ function renderRep() {
     <div class="rep-item__data">Star: ${el.stargazers_count}</div>
 </div> <button class="rep-item__button" data-id=${el.id} style="font-size: 30px;">❌</button></div>`
     )
-    .join("");
+    .join(""))
 }
 repList.addEventListener("click", (e) => {
   let item = e.target;
@@ -47,9 +48,8 @@ repList.addEventListener("click", (e) => {
 input.addEventListener(
   "input",
   debounce(async (e) => {
-    console.log("inpu");
     let text = e.target.value;
-    if (text) {
+    if (text.trim()) {
       let data = await fetchRepo(text);
       dataResults = data.items.slice(0, 5);
       console.log(dataResults);
@@ -64,7 +64,8 @@ function renderResults() {
   dataResults.forEach((item, i) => {
     html += `<div class="results__item" data-id=${i}>${item.full_name}</div>`;
   });
-  results.innerHTML = html;
+  results.innerHTML = '';
+  results.insertAdjacentHTML('afterbegin',html);
 }
 function debounce(fn, ms) {
   let timeOut;
